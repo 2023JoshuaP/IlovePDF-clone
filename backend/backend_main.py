@@ -1,9 +1,18 @@
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader, PdfWriter
 import io
 
 app = FastAPI(title="My Ilove PDF")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 @app.post("/api/merge")
 async def merge_pdfs(files: list[UploadFile] = File(...)):
