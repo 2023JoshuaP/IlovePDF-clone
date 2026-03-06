@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader, PdfWriter
 import io
+import re
 
 app = FastAPI(title="My Ilove PDF")
 
@@ -15,6 +16,9 @@ app.add_middleware(
 )
 
 def parse_page_range(page_range: str, total_pages: int) -> list[int]:
+    if not re.match(r'^[\d\s,\-]+$', page_range):
+        raise ValueError("Invalid format. Only numbers, commas and hyphens are allowed.")
+
     pages_extract = set()
     parts = page_range.replace(" ", "").split(",")
 
@@ -75,7 +79,10 @@ async def split_pdf(file: UploadFile = File(...), pages_string: str = Form(...))
         writer = PdfWriter()
         total_pages = len(reader.pages)
 
-        pages_extract = parse_page_range(pages_string, total_pages)
+        try:
+            pages_extract = parse_page_range(pages_string, total_pages)
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail=str(ve))
 
         if not pages_extract:
             raise HTTPException(status_code=400, detail="No valid pages specified for splitting.")
