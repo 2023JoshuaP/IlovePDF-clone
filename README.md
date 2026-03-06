@@ -5,7 +5,7 @@ Clon de iLovePDF — una aplicación web para manipular archivos PDF de forma r�
 ## Funcionalidades
 
 - **Unir PDFs** — Combina múltiples archivos PDF en uno solo.
-- **Dividir PDF** — Extrae un rango de páginas de un PDF. *(en desarrollo 🚧)*
+- **Dividir PDF** — Extrae páginas específicas de un PDF usando rangos y páginas individuales (ej: `1-3, 5, 8-10`).
 
 > Más funcionalidades serán agregadas próximamente (comprimir PDF, convertir a Word, proteger PDF, etc.).
 
@@ -62,7 +62,7 @@ La app se abre en `http://localhost:5173`.
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | POST | `/api/merge` | Recibe múltiples PDFs y devuelve uno unificado |
-| POST | `/api/split` | Recibe un PDF, `start_page` y `end_page`, devuelve el rango extraído |
+| POST | `/api/split` | Recibe un PDF y `pages_string` (ej: `1-3, 5, 8-10`), devuelve las páginas extraídas |
 
 ## Estructura del Proyecto
 
@@ -73,7 +73,8 @@ IlovePDF-clone/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   └── MergePDF.jsx
+│   │   │   ├── MergePDF.jsx
+│   │   │   └── SplitPDF.jsx
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
