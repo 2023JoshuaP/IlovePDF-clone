@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import MergePDF from './components/MergePDF'
+import SplitPDF from './components/SplitPDF'
 
 function App() {
   const [activeTool, setActiveTool] = useState('home')
@@ -51,12 +52,7 @@ function App() {
         )}
 
         {activeTool === 'merge' && <MergePDF />}
-        {activeTool === 'split' && (
-          <div className="text-center text-gray-500 mt-20">
-            <h2 className="text-2xl font-bold mb-4">Herramienta de División en construcción 🚧</h2>
-            <p>¡Aquí conectaremos el endpoint /api/split que ya tenemos en Python!</p>
-          </div>
-        )}
+        {activeTool === 'split' && <SplitPDF />}
 
       </main>
     </div>
