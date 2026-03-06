@@ -14,6 +14,36 @@ app.add_middleware(
     allow_credentials=True,
 )
 
+def parse_page_range(page_range: str, total_pages: int) -> list[int]:
+    pages_extract = set()
+    parts = page_range.replace(" ", "").split(",")
+
+    for part in parts:
+        if not part:
+            continue
+        if "-" in part:
+            try:
+                start_str, end_str = part.split("-")
+                start = int(start_str) - 1
+                end = int(end_str) - 1
+
+                start = max(0, start)
+                end = min(total_pages - 1, end)
+                
+                if start <= end:
+                    pages_extract.update(range(start, end + 1))
+            except ValueError:
+                continue
+        else:
+            try:
+                val = int(part) - 1
+                if 0 <= val < total_pages:
+                    pages_extract.add(val)
+            except ValueError:
+                continue
+
+    return sorted(list(pages_extract))
+
 @app.post("/api/merge")
 async def merge_pdfs(files: list[UploadFile] = File(...)):
     if len(files) < 2:
@@ -39,26 +69,30 @@ async def merge_pdfs(files: list[UploadFile] = File(...)):
         raise HTTPException(status_code=500, detail=f"An error occurred while merging PDFs: {str(e)}")
     
 @app.post("/api/split")
-async def split_pdf(file: UploadFile = File(...), start_page: int = Form(...), end_page: int = Form(...)):
+async def split_pdf(file: UploadFile = File(...), pages_string: str = Form(...)):
     try:
         reader = PdfReader(file.file)
         writer = PdfWriter()
-
         total_pages = len(reader.pages)
-        if start_page < 0 or end_page >= total_pages or start_page > end_page:
-            raise HTTPException(status_code=400, detail="Invalid page range specified.")
+
+        pages_extract = parse_page_range(pages_string, total_pages)
+
+        if not pages_extract:
+            raise HTTPException(status_code=400, detail="No valid pages specified for splitting.")
         
-        for i in range(start_page, end_page + 1):
+        for i in pages_extract:
             writer.add_page(reader.pages[i])
         
         output_pdf = io.BytesIO()
         writer.write(output_pdf)
         output_pdf.seek(0)
 
+        safe_file = file.filename.replace(".pdf", "_split.pdf")
+
         return StreamingResponse(
             output_pdf,
             media_type="application/pdf",
-            headers={"Content-Disposition": "attachment; filename=splitted.pdf"}
+            headers={"Content-Disposition": f"attachment; filename={safe_file}"}
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while splitting the PDF: {str(e)}")
