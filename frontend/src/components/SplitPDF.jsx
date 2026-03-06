@@ -2,12 +2,13 @@ import { useState } from 'react'
 
 function SplitPDF() {
     const [file, setFile] = useState(null)
-    const [startPage, setStartPage] = useState(0)
-    const [endPage, setEndPage] = useState(0)
+    const [pagesString, setPagesString] = useState('')
     const [isLoading, setIsLoading] = useState(false)
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0])
+        if (e.target.files.length > 0) {
+            setFile(e.target.files[0])
+        }
     }
 
     const handleSplit = async () => {
@@ -15,8 +16,13 @@ function SplitPDF() {
             alert('Please select a PDF file first.')
             return
         }
-        if (startPage < 1 || endPage < startPage) {
-            alert('Please enter valid page numbers.')
+        if (!pagesString.trim()) {
+            alert('Please enter the pages you want to extract.')
+            return
+        }
+
+        if (!/^[\d\s,\-]+$/.test(pagesString)) {
+            alert('Formato inválido. Solo puedes usar números, comas (,) y guiones (-).\nEjemplo: 1-3, 5, 8-10')
             return
         }
 
@@ -24,8 +30,7 @@ function SplitPDF() {
         const formData = new FormData()
         formData.append('file', file)
 
-        formData.append('start_page', startPage - 1)
-        formData.append('end_page', endPage - 1)
+        formData.append('pages_string', pagesString)
 
         try {
             const response = await fetch('http://127.0.0.1:8000/api/split', {
@@ -41,7 +46,10 @@ function SplitPDF() {
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `PDF_split_${startPage}_to_${endPage}.pdf`
+
+            const safeName = pagesString.replace(/\s+/g, '').replace(/,/g, '_')
+            a.download = `PDF_split_${safeName}.pdf`
+            
             document.body.appendChild(a)
             a.click()
             a.remove()
@@ -87,28 +95,16 @@ function SplitPDF() {
                 )}
 
                 {file && (
-                    <div className='flex gap-4 mb-8 justify-center items-end bg-gray-50 p-6 rounded-xl border border-gray-100'>
-                        <div className='flex flex-col text-left'>
-                            <label className='text-sm font-semibold text-gray-600'>Página de inicio</label>
-                            <input 
-                                type="number"
-                                min="1"
-                                value={startPage}
-                                onChange={(e) => setStartPage(parseInt(e.target.value) || 1)}
-                                className='w-24 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-400 focus:outline-none'
-                            />
-                        </div>
-                        <div className='text-gray-400 font-boldpb-2'>-</div>
-                        <div className='flex flex-col text-left'>
-                            <label className='text-sm font-semibold text-gray-600 mb-1'>Hasta la página:</label>
-                            <input 
-                                type="number"
-                                min="1"
-                                value={endPage}
-                                onChange={(e) => setEndPage(parseInt(e.target.value) || 1)}
-                                className='w-24 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-400 focus:outline-none'
-                            />
-                        </div>
+                    <div className='flex flex-col gap-2 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100'>
+                        <label className='text-sm font-semibold text-gray-600 text-left'>Páginas a extraer</label>
+                        <input 
+                            type="text"
+                            placeholder='Ej: 1-3, 5, 8-10'
+                            value={pagesString}
+                            onChange={(e) => setPagesString(e.target.value)}
+                            className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:outline-none'
+                        />
+                        <p className='text-xs text-gray-400 text-left'>Usa comas para separar páginas y guiones para rangos</p>
                     </div>
                 )}
 
